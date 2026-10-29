@@ -1,0 +1,46 @@
+{
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1158.0",
+    "@nestjs/common": "^12.0.0",
+    "@nestjs/core": "^12.0.0",
+    "@nestjs/jwt": "^12.0.0",
+    "@nestjs/platform-express": "^12.0.0",
+    "@nestjs/platform-socket.io": "^12.3.2",
+    "@nestjs/websockets": "^12.3.2",
+    "@rahi/shared-types": "*",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "bcryptjs": "^2.4.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.0",
+    "ioredis": "^6.0.0",
+    "otplib": "^12.0.1",
+    "pg": "^8.13.0",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.8.0",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.0",
+    "@nestjs/testing": "^12.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "@types/supertest": "^6.0.0",
+    "socket.io-client": "^4.8.4",
+    "supertest": "^7.0.0",
+    "typescript": "^5.9.0"
+  },
+  "name": "@rahi/api",
+  "private": true,
+  "scripts": {
+    "build": "npm --workspace @rahi/shared-types run build && tsc -p tsconfig.json",
+    "demo": "npm run build && node scripts/demo-simulator.mjs",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "test": "npm run build && node --test test/e2e/auth.test.mjs test/e2e/driver.test.mjs test/e2e/rides.test.mjs test/e2e/dispatch.test.mjs test/e2e/offers.test.mjs test/e2e/tracking.test.mjs test/e2e/trips.test.mjs test/e2e/delivery.test.mjs test/e2e/payments.test.mjs test/e2e/admin.test.mjs test/e2e/support.test.mjs test/e2e/analytics.test.mjs test/unit/rate-limiter.test.mjs test/unit/encryption.test.mjs test/unit/offers-tx.test.mjs test/unit/socket-cors.test.mjs test/unit/storage.test.mjs test/unit/socket-adapter.test.mjs test/unit/sms.test.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "version": "0.3.0"
+}

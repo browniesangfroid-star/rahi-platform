@@ -1,0 +1,1 @@
+{"dependencies":{"next":"^16.0.0","react":"^19.0.0","react-dom":"^19.0.0"},"devDependencies":{"@types/node":"^22.0.0","@types/react":"^19.0.0","typescript":"^5.9.0"},"name":"@rahi/admin-web","private":true,"scripts":{"build":"next build","dev":"next dev -p 3000","start":"next start -p ${PORT:-3000}"},"version":"0.2.0"}

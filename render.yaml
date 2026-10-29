@@ -1,0 +1,55 @@
+# Rahi — Render Blueprint (free test hosting).
+#
+# What it creates (all free tier, for TESTING only):
+#   rahi-api   — NestJS API (Docker, from apps/api/Dockerfile)
+#   rahi-db    — Postgres (free; see docs/HOSTING.md for expiry note)
+#   rahi-admin — Next.js admin web app (Node)
+#
+# Service names are load-bearing: the admin build bakes the API url
+# https://rahi-api.onrender.com/api/v1, and the API's CORS allow-list
+# is https://rahi-admin.onrender.com. If you rename a service, change
+# those two values to match.
+#
+# Secrets (ENCRYPTION_KEY) are NOT in this file: Render asks for them
+# when the blueprint is applied (sync: false). See docs/HOSTING.md
+# for the one-time setup (migrations + first admin) after deploy.
+
+services:
+  - type: web
+    name: rahi-api
+    env: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rahi-db
+          property: connectionString
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://rahi-admin.onrender.com
+      - key: SOCKET_CORS_ORIGINS
+        value: https://rahi-admin.onrender.com
+      - key: SMS_PROVIDER
+        value: log
+
+  - type: web
+    name: rahi-admin
+    env: node
+    buildCommand: npm install && npm --workspace @rahi/admin-web run build
+    startCommand: npm --workspace @rahi/admin-web run start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: https://rahi-api.onrender.com/api/v1
+      - key: NEXT_PUBLIC_API_URL
+        value: https://rahi-api.onrender.com
+
+databases:
+  - name: rahi-db
+    plan: free
