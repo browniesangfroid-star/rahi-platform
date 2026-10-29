@@ -639,6 +639,11 @@ export interface DeliveryStore {
 }
 
 export interface TripStore {
+  /** The driver's current non-terminal ride, if any. The driver app
+   *  needs this because acceptance happens customer-side and there
+   *  is no push channel: without it, a driver could never learn
+   *  that an offer was accepted. */
+  getActiveRideForDriver(driverId: string): Promise<RideRecord | null>;
   setRideStatus(rideId: string, status: string): Promise<RideRecord | null>;
   addRideHistory(entry: Omit<RideHistoryRecord, 'createdAt'>): Promise<void>;
   listRideHistory(rideId: string): Promise<RideHistoryRecord[]>;

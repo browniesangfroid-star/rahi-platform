@@ -1,6 +1,6 @@
 name: rahi_customer
-description: Rahi customer app — car, bike and delivery booking. Phase 4: booking funnel UI + auth against the Phase 3 API. Ride estimate/request endpoints land server-side in Phase 6; until then the app shows a real error state, never fake trips.
-version: 0.4.0+1
+description: Rahi customer app — car, bike and delivery booking, driver offers, live trip tracking with PIN, wallet, ratings, SOS and support against the live Rahi API.
+version: 1.0.0+1
 environment:
   sdk: ">=3.4.0 <4.0.0"
 dependencies:

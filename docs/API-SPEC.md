@@ -26,6 +26,10 @@ offer selection.
   (signed upload URLs only), `GET /drivers/vehicles`, `POST /drivers/vehicles`
 - `POST /drivers/location` (driver, batched GPS), `POST /drivers/online`,
   `POST /drivers/offline`
+- `GET /drivers/active-trip` (driver): the driver's current
+  non-terminal ride, or `null`. Acceptance happens customer-side and
+  there is no push channel, so the driver app polls this to learn
+  that an offer was accepted.
 
 ## Rides
 

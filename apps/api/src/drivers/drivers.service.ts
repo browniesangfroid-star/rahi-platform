@@ -103,6 +103,12 @@ export class DriversService {
     return { online: existing?.online ?? false, lat, lng };
   }
 
+  /** Current non-terminal ride for the driver app's trip screen.
+   *  Returns null when the driver has no live trip. */
+  async getActiveTrip(userId: string) {
+    return this.store.getActiveRideForDriver(userId);
+  }
+
   async getStatus(userId: string) {
     const profile = await this.store.getDriverProfile(userId);
     if (!profile) throw new NotFoundException('Driver profile not found');

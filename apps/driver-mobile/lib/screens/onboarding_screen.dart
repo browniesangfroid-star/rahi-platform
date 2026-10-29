@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/driver_service.dart';
 import '../state/driver_state.dart';
 
 /// Onboarding steps: emergency contact → documents (CNIC, licence,
@@ -111,16 +110,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: _busy ? null : () async {
-                await state.service.createVehicle({
-                  'categoryCode': _category,
-                  'make': _make.text.trim(),
-                  'model': _model.text.trim(),
-                  'year': int.tryParse(_year.text.trim()) ?? 2022,
-                  'color': _color.text.trim(),
-                  'registrationNumber': _plate.text.trim(),
-                });
-                await state.refresh();
-                setState(() => _message = 'Vehicle added. An admin must approve it before activation.');
+                try {
+                  await state.service.createVehicle({
+                    'categoryCode': _category,
+                    'make': _make.text.trim(),
+                    'model': _model.text.trim(),
+                    'year': int.tryParse(_year.text.trim()) ?? 2022,
+                    'color': _color.text.trim(),
+                    'registrationNumber': _plate.text.trim(),
+                  });
+                  await state.refresh();
+                  setState(() => _message = 'Vehicle added. An admin must approve it before activation.');
+                } catch (e) {
+                  setState(() => _message = e.toString());
+                }
               },
               child: const Text('Add vehicle'),
             ),

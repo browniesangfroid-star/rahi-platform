@@ -39,7 +39,7 @@
     "demo": "npm run build && node scripts/demo-simulator.mjs",
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
-    "test": "npm run build && node --test test/e2e/auth.test.mjs test/e2e/driver.test.mjs test/e2e/rides.test.mjs test/e2e/dispatch.test.mjs test/e2e/offers.test.mjs test/e2e/tracking.test.mjs test/e2e/trips.test.mjs test/e2e/delivery.test.mjs test/e2e/payments.test.mjs test/e2e/admin.test.mjs test/e2e/support.test.mjs test/e2e/analytics.test.mjs test/unit/rate-limiter.test.mjs test/unit/encryption.test.mjs test/unit/offers-tx.test.mjs test/unit/socket-cors.test.mjs test/unit/storage.test.mjs test/unit/socket-adapter.test.mjs test/unit/sms.test.mjs",
+    "test": "npm run build && node --test test/e2e/auth.test.mjs test/e2e/driver.test.mjs test/e2e/rides.test.mjs test/e2e/dispatch.test.mjs test/e2e/offers.test.mjs test/e2e/tracking.test.mjs test/e2e/trips.test.mjs test/e2e/delivery.test.mjs test/e2e/payments.test.mjs test/e2e/admin.test.mjs test/e2e/support.test.mjs test/e2e/analytics.test.mjs test/e2e/active-trip.test.mjs test/unit/rate-limiter.test.mjs test/unit/encryption.test.mjs test/unit/offers-tx.test.mjs test/unit/socket-cors.test.mjs test/unit/storage.test.mjs test/unit/socket-adapter.test.mjs test/unit/sms.test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "version": "0.3.0"

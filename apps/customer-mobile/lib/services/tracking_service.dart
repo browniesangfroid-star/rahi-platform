@@ -8,7 +8,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 class TrackingService {
   static const baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3001',
+    defaultValue: 'https://rahi-platform.onrender.com',
   );
   final _storage = const FlutterSecureStorage();
   io.Socket? _socket;

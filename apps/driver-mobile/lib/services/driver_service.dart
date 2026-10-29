@@ -14,9 +14,12 @@ class DriverApiException implements Exception {
 }
 
 class DriverService {
+  // Live Rahi API on Render. Override with
+  // --dart-define=API_BASE_URL=http://10.0.2.2:3001/api/v1 for a local
+  // emulator build against a dev server.
   static const baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3001/api/v1',
+    defaultValue: 'https://rahi-platform.onrender.com/api/v1',
   );
   final _storage = const FlutterSecureStorage();
 
@@ -85,8 +88,70 @@ class DriverService {
 
   Future<Map<String, dynamic>> getStatus() => _get('/drivers/status');
 
-  /// Phase 10 trip actions for the assigned driver. A live-trip screen
-  /// wires these to buttons in Phase 11; the client itself is ready now.
+  /// The driver's current non-terminal ride, or null. Acceptance
+  /// happens customer-side and there is no push channel, so the app
+  /// polls this to learn that an offer was accepted.
+  Future<Map<String, dynamic>?> getActiveTrip() async {
+    final token = await _storage.read(key: 'rahi_access_token');
+    final response = await http.get(
+      Uri.parse('$baseUrl/drivers/active-trip'),
+      headers: {if (token != null) 'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw DriverApiException(response.statusCode, response.body);
+    }
+    final data = (jsonDecode(response.body) as Map<String, dynamic>)['data'];
+    return data as Map<String, dynamic>?;
+  }
+
+  /// Offer actions on the driver's own offer. The customer accepts;
+  /// the driver creates, re-prices (counter) or declines their offer.
+  /// A fare is required for NEGOTIATION/HYBRID and ignored for
+  /// FIXED/DYNAMIC — the server enforces both, never the app.
+  Future<Map<String, dynamic>> createOffer(String requestId, {int? fareMinor}) =>
+      _postJson('/rides/$requestId/offers', {
+        if (fareMinor != null) 'fareMinor': fareMinor,
+      });
+
+  Future<Map<String, dynamic>> counterOffer(
+          String requestId, String offerId, int fareMinor) =>
+      _postJson('/rides/$requestId/offers/$offerId/counter', {'fareMinor': fareMinor});
+
+  Future<Map<String, dynamic>> declineOffer(String requestId, String offerId) =>
+      _postJson('/rides/$requestId/offers/$offerId/decline', {});
+
+  /// Ratings are symmetric: the driver rates the customer with the
+  /// same endpoint the customer uses to rate the driver.
+  Future<Map<String, dynamic>> rateRide(
+    String rideId, {
+    required int stars,
+    String? comment,
+    String? reportReason,
+  }) =>
+      _postJson('/trips/$rideId/ratings', {
+        'stars': stars,
+        if (comment != null) 'comment': comment,
+        if (reportReason != null) 'reportReason': reportReason,
+      });
+
+  Future<void> logout() async {
+    final refresh = await _storage.read(key: 'rahi_refresh_token');
+    if (refresh != null) {
+      try {
+        await _postJson('/auth/logout', {'refreshToken': refresh});
+      } catch (_) {
+        // Best-effort; local tokens are cleared anyway.
+      }
+    }
+    await _storage.delete(key: 'rahi_access_token');
+    await _storage.delete(key: 'rahi_refresh_token');
+  }
+
+  /// Trip detail for the assigned driver (status, fare, request,
+  /// timeline). The trip screen polls this while the trip is live.
+  Future<Map<String, dynamic>> getTrip(String rideId) => _get('/trips/$rideId');
+
+  /// Trip actions for the assigned driver, wired to the trip screen.
   Future<Map<String, dynamic>> tripEnRoute(String rideId) => _postJson('/trips/$rideId/en-route', {});
   Future<Map<String, dynamic>> tripArrived(String rideId) => _postJson('/trips/$rideId/arrived', {});
   Future<Map<String, dynamic>> tripBeginPin(String rideId) => _postJson('/trips/$rideId/begin-pin-verification', {});
@@ -110,6 +175,18 @@ class DriverService {
 
   Future<Map<String, dynamic>> requestWithdrawal(int amountMinor) =>
       _postJson('/wallet/withdrawals', {'ownerType': 'DRIVER', 'amountMinor': amountMinor});
+
+  Future<List<dynamic>> listWithdrawals() async {
+    final token = await _storage.read(key: 'rahi_access_token');
+    final response = await http.get(
+      Uri.parse('$baseUrl/wallet/withdrawals'),
+      headers: {if (token != null) 'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return (jsonDecode(response.body) as Map<String, dynamic>)['data'] as List<dynamic>;
+    }
+    throw DriverApiException(response.statusCode, response.body);
+  }
 
   /// Phase 14: SOS during a live trip. Creates a HIGH-priority
   /// incident with a snapshot for ops — it does not contact police.

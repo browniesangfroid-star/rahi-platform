@@ -14,11 +14,12 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  // Android emulator reaches the host at 10.0.2.2. Override with
-  // --dart-define=API_BASE_URL=https://api.example.com/api/v1 for real builds.
+  // Live Rahi API on Render. Override with
+  // --dart-define=API_BASE_URL=http://10.0.2.2:3001/api/v1 for a local
+  // emulator build against a dev server.
   static const baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3001/api/v1',
+    defaultValue: 'https://rahi-platform.onrender.com/api/v1',
   );
 
   final _storage = const FlutterSecureStorage();

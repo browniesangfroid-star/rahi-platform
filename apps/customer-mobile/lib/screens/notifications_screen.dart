@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Notifications arrive with the notification service in Phase 6+.
-/// Until then, an empty state — never sample notifications.
+/// Push notifications are not available yet: the server has no
+/// notification feed, so this stays an honest empty state — never
+/// sample notifications. Trip updates arrive on the trip screen and
+/// support replies under Profile → Support.
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
   @override

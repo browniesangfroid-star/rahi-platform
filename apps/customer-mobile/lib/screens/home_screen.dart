@@ -5,11 +5,14 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../state/booking_state.dart';
+import '../state/trip_state.dart';
 import '../utils/fare.dart';
+import 'offers_screen.dart';
+import 'trip_screen.dart';
 
 /// Booking funnel: map → service → pickup → destination → estimate →
-/// offer → request. Map taps set pickup then destination; the current
-/// location button uses GPS with a Lahore-centre fallback on failure.
+/// offer → request → offers → trip. Map taps set pickup then
+/// destination; the map opens on the Islamabad pilot centre.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -21,7 +24,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final _pickupLabel = TextEditingController();
   final _destinationLabel = TextEditingController();
   final _offer = TextEditingController();
-  static const _lahore = LatLng(31.5204, 74.3587);
+  final _senderName = TextEditingController();
+  final _senderPhone = TextEditingController();
+  final _recipientName = TextEditingController();
+  final _recipientPhone = TextEditingController();
+  final _packageCategory = TextEditingController();
+  String _paymentMethod = 'CASH';
+  static const _islamabad = LatLng(33.6844, 73.0479);
 
   @override
   void dispose() {
@@ -29,8 +38,20 @@ class _HomeScreenState extends State<HomeScreen> {
     _pickupLabel.dispose();
     _destinationLabel.dispose();
     _offer.dispose();
+    _senderName.dispose();
+    _senderPhone.dispose();
+    _recipientName.dispose();
+    _recipientPhone.dispose();
+    _packageCategory.dispose();
     super.dispose();
   }
+
+  bool get _deliveryValid =>
+      _senderName.text.trim().isNotEmpty &&
+      _senderPhone.text.trim().isNotEmpty &&
+      _recipientName.text.trim().isNotEmpty &&
+      _recipientPhone.text.trim().isNotEmpty &&
+      _packageCategory.text.trim().isNotEmpty;
 
   void _onMapTap(TapPosition _, LatLng point) {
     final booking = context.read<BookingState>();
@@ -67,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final booking = context.watch<BookingState>();
+    final tripState = context.watch<TripState>();
     final markers = <Marker>[];
     if (booking.pickup != null) {
       markers.add(Marker(
@@ -87,10 +109,22 @@ class _HomeScreenState extends State<HomeScreen> {
       ]),
       body: Column(
         children: [
+          if (tripState.activeRideId != null)
+            Card(
+              margin: const EdgeInsets.all(8),
+              child: ListTile(
+                leading: const Icon(Icons.local_taxi, color: Colors.teal),
+                title: Text('Live trip — ${tripState.statusLabel}'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const TripScreen()),
+                ),
+              ),
+            ),
           Expanded(
             child: FlutterMap(
               mapController: _mapController,
-              options: MapOptions(initialCenter: _lahore, initialZoom: 13, onTap: _onMapTap),
+              options: MapOptions(initialCenter: _islamabad, initialZoom: 13, onTap: _onMapTap),
               children: [
                 TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'com.rahi.customer'),
                 if (markers.isNotEmpty) MarkerLayer(markers: markers),
@@ -160,20 +194,103 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   const SizedBox(height: 12),
+                  const Text('Payment method'),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    children: ['CASH', 'WALLET'].map((method) {
+                      return ChoiceChip(
+                        label: Text(method == 'CASH' ? 'Cash' : 'Wallet'),
+                        selected: _paymentMethod == method,
+                        onSelected: (_) =>
+                            setState(() => _paymentMethod = method),
+                      );
+                    }).toList(),
+                  ),
+                  if (booking.service == ServiceType.delivery) ...[
+                    const SizedBox(height: 12),
+                    const Text('Delivery details (required)',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _senderName,
+                      decoration: const InputDecoration(labelText: 'Sender name'),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _senderPhone,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(labelText: 'Sender phone'),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _recipientName,
+                      decoration: const InputDecoration(labelText: 'Recipient name'),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _recipientPhone,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(labelText: 'Recipient phone'),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _packageCategory,
+                      decoration: const InputDecoration(
+                          labelText: 'Package category',
+                          hintText: 'e.g. Documents, Food, Parcel'),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
                   // Request is disabled while the fare is a preview only:
                   // a ride must never be requested on an invented fare.
+                  // Delivery also needs its details filled first.
                   ElevatedButton(
                     onPressed: booking.status == BookingStatus.requesting
                         ? null
-                        : (booking.estimate!.suggestedFareMinor > 0 ? booking.requestRide : null),
+                        : (booking.estimate!.suggestedFareMinor > 0 &&
+                                (booking.service != ServiceType.delivery ||
+                                    _deliveryValid)
+                            ? () {
+                                booking.paymentMethod = _paymentMethod;
+                                if (booking.service == ServiceType.delivery) {
+                                  booking.deliveryDetails = {
+                                    'senderName': _senderName.text.trim(),
+                                    'senderPhone': _senderPhone.text.trim(),
+                                    'recipientName': _recipientName.text.trim(),
+                                    'recipientPhone':
+                                        _recipientPhone.text.trim(),
+                                    'packageCategory':
+                                        _packageCategory.text.trim(),
+                                  };
+                                }
+                                booking.requestRide();
+                              }
+                            : null),
                     child: booking.status == BookingStatus.requesting
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Text('REQUEST RIDE'),
                   ),
                 ],
-                if (booking.status == BookingStatus.requested) ...[
+                if (booking.status == BookingStatus.requested &&
+                    booking.requestId != null) ...[
                   const SizedBox(height: 12),
-                  Text('Request sent${booking.requestId != null ? ' (${booking.requestId})' : ''}. Driver offers arrive in Phase 8.'),
+                  Text('Request sent (${booking.requestId}).'),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            OffersScreen(requestId: booking.requestId!),
+                      ),
+                    ),
+                    child: const Text('VIEW DRIVER OFFERS'),
+                  ),
                 ],
                 if (booking.error != null) ...[
                   const SizedBox(height: 12),

@@ -291,6 +291,12 @@ export class InMemoryStore implements Store {
     return [...this.rides.values()].find((r) => r.requestId === requestId) ?? null;
   }
   async getRideById(id: string) { return this.rides.get(id) ?? null; }
+  async getActiveRideForDriver(driverId: string) {
+    const active = ['DRIVER_SELECTED', 'DRIVER_EN_ROUTE', 'DRIVER_ARRIVED', 'WAITING_FOR_PIN', 'IN_PROGRESS'];
+    return [...this.rides.values()]
+      .filter((r) => r.driverId === driverId && active.includes(r.status))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] ?? null;
+  }
   async setDispatchAttemptOutcome(requestId: string, driverId: string, outcome: string) {
     for (const attempt of this.dispatchAttempts) {
       if (attempt.requestId === requestId && attempt.driverUserId === driverId && attempt.outcome === 'OFFERED') {

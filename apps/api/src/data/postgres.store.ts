@@ -522,6 +522,14 @@ export class PostgresStore implements Store {
     const r = rows[0];
     return { id: r.id, requestId: r.request_id, customerId: r.customer_id, driverId: r.driver_id, vehicleId: r.vehicle_id, status: r.status, finalFareMinor: r.final_fare_minor, commissionMinor: r.commission_minor, commissionRuleVersion: r.commission_rule_version, paymentMethod: r.payment_method, createdAt: r.created_at };
   }
+  async getActiveRideForDriver(driverId: string) {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM rides WHERE driver_id = $1 AND status IN ('DRIVER_SELECTED','DRIVER_EN_ROUTE','DRIVER_ARRIVED','WAITING_FOR_PIN','IN_PROGRESS') ORDER BY created_at DESC LIMIT 1`,
+      [driverId]);
+    if (!rows[0]) return null;
+    const r = rows[0];
+    return { id: r.id, requestId: r.request_id, customerId: r.customer_id, driverId: r.driver_id, vehicleId: r.vehicle_id, status: r.status, finalFareMinor: r.final_fare_minor, commissionMinor: r.commission_minor, commissionRuleVersion: r.commission_rule_version, paymentMethod: r.payment_method, createdAt: r.created_at };
+  }
   async setDispatchAttemptOutcome(requestId: string, driverId: string, outcome: string) {
     await this.pool.query(
       `UPDATE dispatch_attempts SET outcome = $3 WHERE request_id = $1 AND driver_user_id = $2 AND outcome = 'OFFERED'`, [requestId, driverId, outcome]);

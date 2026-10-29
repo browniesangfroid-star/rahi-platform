@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/auth_state.dart';
+import 'support_screen.dart';
 
 /// Profile backed by the real Phase 3 /users/me endpoint. Name edits
 /// call PATCH /users/me; nothing here is local-only.
@@ -57,6 +58,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('Save profile'),
           ),
           if (_message != null) ...[const SizedBox(height: 12), Text(_message!)],
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SupportScreen()),
+            ),
+            child: const Text('Support tickets'),
+          ),
           const Spacer(),
           OutlinedButton(onPressed: auth.logout, child: const Text('Log out')),
         ],

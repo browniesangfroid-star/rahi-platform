@@ -19,6 +19,10 @@ export class DriversController {
     return { data: await this.offers.incomingRequests(req.user.id) };
   }
 
+  @Get('active-trip') async activeTrip(@Req() req: any) {
+    return { data: await this.drivers.getActiveTrip(req.user.id) };
+  }
+
   @Post('register') async register(@Req() req: any, @Body() dto: RegisterDriverDto) {
     return { data: await this.drivers.register(req.user.id, dto.emergencyContactName ?? null, dto.emergencyContactPhone ?? null, dto.bankAccount ?? null) };
   }

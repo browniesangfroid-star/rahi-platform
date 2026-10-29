@@ -62,12 +62,15 @@ class DriverState extends ChangeNotifier {
   /// Toggles the real server online state. The server enforces the
   /// canAcceptRides gate, so a local switch can never override it;
   /// a failure (e.g. no location yet) surfaces as an error, not a
-  /// silently flipped switch.
-  Future<void> toggleOnline() async {
+  /// silently flipped switch. Going online sends the driver's
+  /// current GPS position, which dispatch uses for matching.
+  Future<void> toggleOnline({double? lat, double? lng}) async {
     busy = true;
     notifyListeners();
     try {
-      final result = online ? await service.goOffline() : await service.goOnline();
+      final result = online
+          ? await service.goOffline()
+          : await service.goOnline(lat: lat, lng: lng);
       online = (result['online'] as bool?) ?? false;
       if (online) incoming = await service.incomingRequests();
       error = null;
@@ -77,5 +80,17 @@ class DriverState extends ChangeNotifier {
       busy = false;
       notifyListeners();
     }
+  }
+
+  /// Signs out locally (tokens cleared). The error string is also
+  /// the auth-screen signal: with no profile and an error set, the
+  /// shell routes back to sign-in.
+  Future<void> logout() async {
+    await service.logout();
+    status = null;
+    incoming = [];
+    online = false;
+    error = 'Signed out.';
+    notifyListeners();
   }
 }

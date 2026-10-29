@@ -18,6 +18,8 @@ class BookingState extends ChangeNotifier {
   Place? destination;
   Estimate? estimate;
   int? customerOfferMinor;
+  String paymentMethod = 'CASH';
+  Map<String, dynamic>? deliveryDetails;
   BookingStatus status = BookingStatus.idle;
   String? error;
   String? requestId;
@@ -42,9 +44,9 @@ class BookingState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Local preview first (map distance/ETA), then the server estimate
-  /// when Phase 6 lands. If the server is not there yet, the preview
-  /// stays visible and the error explains the next step — no fake fare.
+  /// Local preview first (map distance/ETA), then the server estimate.
+  /// If the server is unreachable, the preview stays visible and the
+  /// error explains the next step — no fake fare.
   Future<void> loadEstimate() async {
     if (!canEstimate) return;
     status = BookingStatus.estimating;
@@ -58,8 +60,8 @@ class BookingState extends ChangeNotifier {
       estimate = await rides.estimate(pickup: p, destination: d, service: service);
       status = BookingStatus.ready;
     } catch (e) {
-      // Server estimate unavailable (Phase 6 pending): keep a local
-      // distance/ETA preview, but do NOT invent a fare.
+      // Server estimate unavailable: keep a local distance/ETA
+      // preview, but do NOT invent a fare.
       estimate = Estimate(
         distanceKm: localKm,
         durationMin: localEta,
@@ -68,7 +70,7 @@ class BookingState extends ChangeNotifier {
         pricingMode: 'PENDING',
       );
       status = BookingStatus.error;
-      error = 'Live fare is not available yet (ride service arrives in Phase 6). '
+      error = 'Live fare is not available right now. '
           'Distance and time below are a map preview only — no fare is shown.';
     }
     notifyListeners();
@@ -85,6 +87,8 @@ class BookingState extends ChangeNotifier {
         destination: destination!,
         service: service,
         customerOfferMinor: customerOfferMinor,
+        paymentMethod: paymentMethod,
+        deliveryDetails: deliveryDetails,
       );
       requestId = result['id'] as String?;
       status = BookingStatus.requested;
@@ -100,6 +104,8 @@ class BookingState extends ChangeNotifier {
     destination = null;
     estimate = null;
     customerOfferMinor = null;
+    paymentMethod = 'CASH';
+    deliveryDetails = null;
     requestId = null;
     status = BookingStatus.idle;
     error = null;

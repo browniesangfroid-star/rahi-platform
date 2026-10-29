@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/driver_auth_screen.dart';
+import 'screens/driver_home_screen.dart';
+import 'screens/driver_wallet_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/driver_service.dart';
+import 'services/tracking_service.dart';
 import 'state/driver_state.dart';
+import 'state/driver_trip_state.dart';
 
 void main() {
-  runApp(ChangeNotifierProvider(
-    create: (_) => DriverState(DriverService())..refresh(),
+  final service = DriverService();
+  runApp(MultiProvider(
+    providers: [
+      Provider<DriverService>.value(value: service),
+      ChangeNotifierProvider(create: (_) => DriverState(service)..refresh()),
+      ChangeNotifierProvider(
+          create: (_) =>
+              DriverTripState(service, DriverTrackingService())..restore()),
+    ],
     child: const RahiDriverApp(),
   ));
 }
@@ -22,7 +33,10 @@ class RahiDriverApp extends StatelessWidget {
     if (needsAuth) {
       return MaterialApp(
         title: 'Rahi Driver',
-        home: DriverAuthScreen(onVerified: () => state.refresh()),
+        home: DriverAuthScreen(onVerified: () {
+          state.refresh();
+          context.read<DriverTripState>().restore();
+        }),
       );
     }
     return MaterialApp(
@@ -30,58 +44,105 @@ class RahiDriverApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0F766E)),
         useMaterial3: true,
-      ),
-      home: Scaffold(
-        appBar: AppBar(title: const Text('Rahi Driver')),
-        body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('KYC: ${state.kycStatus}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(state.canAcceptRides
-                  ? 'You are approved with an active vehicle. Going online makes you matchable for nearby requests.'
-                  : 'Online mode is locked until you are APPROVED with an active approved vehicle. '
-                      'That gate is enforced server-side, not just in this switch.'),
-              const SizedBox(height: 16),
-              // The switch calls the real server endpoints (Phase 7).
-              // GPS pings land in Phase 9; until then the server reuses
-              // the driver's last location, and refuses online with none.
-              SwitchListTile(
-                title: const Text('Online'),
-                value: state.online,
-                onChanged: state.canAcceptRides && !state.busy ? (_) => state.toggleOnline() : null,
-              ),
-              const SizedBox(height: 16),
-              if (state.online) ...[
-                Text('Incoming requests (${state.incoming.length})',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                if (state.incoming.isEmpty)
-                  const Text('No dispatched requests right now. Offer accept/counter UI arrives with the live-trip screens in Phase 10.')
-                else
-                  for (final req in state.incoming)
-                    ListTile(
-                      title: Text('${req['serviceCode']} · ${(req['id'] as String).substring(0, 8)}'),
-                      subtitle: Text(req['myOffer'] != null
-                          ? 'Your live offer: ${req['myOffer']['proposedFareMinor']} minor units'
-                          : 'No offer sent yet'),
-                    ),
-                const SizedBox(height: 16),
-              ],
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-                ),
-                child: const Text('Onboarding & documents'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(onPressed: state.refresh, child: const Text('Refresh status')),
-              if (state.error != null) ...[const SizedBox(height: 12), Text(state.error!, style: const TextStyle(color: Colors.red))],
-            ],
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF0F766E),
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(56),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+            textStyle:
+                const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
           ),
         ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      ),
+      home: const DriverShell(),
+    );
+  }
+}
+
+/// Bottom navigation: Home, Wallet, Account (KYC + onboarding + logout).
+class DriverShell extends StatefulWidget {
+  const DriverShell({super.key});
+  @override
+  State<DriverShell> createState() => _DriverShellState();
+}
+
+class _DriverShellState extends State<DriverShell> {
+  int _index = 0;
+  static const _screens = [
+    DriverHomeScreen(),
+    DriverWalletScreen(),
+    _AccountScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Rahi Driver')),
+      body: _screens[_index],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (value) => setState(() => _index = value),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.account_balance_wallet), label: 'Wallet'),
+          NavigationDestination(icon: Icon(Icons.person), label: 'Account'),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountScreen extends StatelessWidget {
+  const _AccountScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<DriverState>();
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('KYC: ${state.kycStatus}',
+              style:
+                  const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(state.canAcceptRides
+              ? 'Approved with an active approved vehicle.'
+              : 'Approval needs an APPROVED KYC profile and an active approved vehicle.'),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+            ),
+            child: const Text('Onboarding & documents'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: state.refresh,
+            child: const Text('Refresh status'),
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton(
+            onPressed: () async {
+              await context.read<DriverTripState>().clearTrip();
+              await state.logout();
+            },
+            child: const Text('Log out'),
+          ),
+          if (state.error != null && state.error != 'Signed out.') ...[
+            const SizedBox(height: 12),
+            Text(state.error!, style: const TextStyle(color: Colors.red)),
+          ],
+        ],
       ),
     );
   }

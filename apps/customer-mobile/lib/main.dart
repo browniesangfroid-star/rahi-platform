@@ -9,9 +9,14 @@ import 'screens/profile_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
+import 'services/offer_service.dart';
 import 'services/ride_service.dart';
+import 'services/support_service.dart';
+import 'services/tracking_service.dart';
+import 'services/wallet_service.dart';
 import 'state/auth_state.dart';
 import 'state/booking_state.dart';
+import 'state/trip_state.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -27,8 +32,14 @@ class RahiCustomerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider<ApiClient>.value(value: api),
         ChangeNotifierProvider(create: (_) => AuthState(AuthService(api))..restore()),
         ChangeNotifierProvider(create: (_) => BookingState(RideService(api), OsmMapsProvider())),
+        ChangeNotifierProvider(
+            create: (_) => TripState(RideService(api), SupportService(api), TrackingService())..restore()),
+        Provider(create: (_) => OfferService(api)),
+        Provider(create: (_) => WalletService(api)),
+        Provider(create: (_) => SupportService(api)),
       ],
       child: MaterialApp(
         title: 'Rahi',
