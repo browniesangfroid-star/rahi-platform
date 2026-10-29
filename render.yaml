@@ -48,6 +48,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "22"
       - key: NEXT_PUBLIC_API_BASE_URL
         value: https://rahi-platform.onrender.com/api/v1
       - key: NEXT_PUBLIC_API_URL
