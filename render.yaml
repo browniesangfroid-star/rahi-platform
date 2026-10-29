@@ -5,10 +5,13 @@
 #   rahi-db    — Postgres (free; see docs/HOSTING.md for expiry note)
 #   rahi-admin — Next.js admin web app (Node)
 #
-# Service names are load-bearing: the admin build bakes the API url
-# https://rahi-api.onrender.com/api/v1, and the API's CORS allow-list
-# is https://rahi-admin.onrender.com. If you rename a service, change
-# those two values to match.
+# URLs are load-bearing AND renaming a service does NOT change its
+# .onrender.com URL (learned 2026-10-29: the API was created manually
+# as rahi-platform, renamed to rahi-api, but its URL stayed
+# rahi-platform.onrender.com). So: the admin build bakes the API url
+# https://rahi-platform.onrender.com/api/v1, and the API's CORS
+# allow-list is https://rahi-admin.onrender.com. If you recreate a
+# service under a new name, change those values to match the NEW url.
 #
 # Secrets (ENCRYPTION_KEY) are NOT in this file: Render asks for them
 # when the blueprint is applied (sync: false). See docs/HOSTING.md
@@ -46,9 +49,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_BASE_URL
-        value: https://rahi-api.onrender.com/api/v1
+        value: https://rahi-platform.onrender.com/api/v1
       - key: NEXT_PUBLIC_API_URL
-        value: https://rahi-api.onrender.com
+        value: https://rahi-platform.onrender.com
 
 databases:
   - name: rahi-db
