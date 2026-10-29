@@ -36,8 +36,15 @@ export class AdminService {
   constructor(@Inject(STORE) private readonly store: Store) {}
 
   private async audit(actorId: string, action: string, targetType: string, targetId: string, before: unknown, after: unknown) {
+    // audit_logs.target_id is a UUID column, but catalog and settings
+    // actions target codes/keys ('CAR', 'service_categories') that are
+    // not UUIDs. Passing one throws inside Postgres and turns an
+    // already-applied change into a 500 for the admin. Keep the trace
+    // (action, type, and before/after summaries all carry the code)
+    // and store a null target id for those actions.
+    const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
     await this.store.addAuditLog({
-      actorId, action, targetType, targetId,
+      actorId, action, targetType, targetId: uuidLike ? targetId : null,
       beforeSummary: before === null ? null : JSON.stringify(before),
       afterSummary: after === null ? null : JSON.stringify(after),
       reason: null,
