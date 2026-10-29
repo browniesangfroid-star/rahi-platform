@@ -71,8 +71,14 @@ export class PostgresStore implements Store {
     return (await this.getUserById(rows[0].id))!;
   }
   async createAdminUser(email: string, passwordHash: string, firstName: string, lastName: string) {
+    // users.phone is NOT NULL (001) but email-admins have no phone.
+    // The in-memory store never enforced this, so the Postgres path
+    // failed on first real use (Render bootstrap, 2026-10-29). Give
+    // email-admins a synthetic, non-routable placeholder phone: it is
+    // unique (uuid suffix), never matches an E.164 number, and is
+    // replaced if the admin later adds a real phone number.
     const { rows } = await this.pool.query(
-      `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id`, [email, passwordHash]);
+      `INSERT INTO users (email, password_hash, phone) VALUES ($1, $2, 'admin:' || gen_random_uuid()::text) RETURNING id`, [email, passwordHash]);
     await this.insertProfile(rows[0].id, firstName, lastName);
     return (await this.getUserById(rows[0].id))!;
   }
