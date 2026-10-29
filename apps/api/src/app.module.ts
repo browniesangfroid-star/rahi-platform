@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { HealthController } from './health/health.controller';
+import { BootstrapController } from './bootstrap/bootstrap.controller';
 import { DataModule } from './data/data.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -18,6 +19,6 @@ import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [DataModule, AuthModule, UsersModule, RbacModule, DriversModule, RidesModule, DispatchModule, OffersModule, TrackingModule, TripsModule, DeliveryModule, PaymentsModule, AdminModule, SupportModule, AnalyticsModule],
-  controllers: [HealthController],
+  controllers: [HealthController, BootstrapController],
 })
 export class AppModule {}

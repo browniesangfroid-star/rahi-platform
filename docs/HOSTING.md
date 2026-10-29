@@ -69,6 +69,28 @@ ADMIN_EMAIL=admin@rahi.test ADMIN_PASSWORD=<mazboot-password> node scripts/creat
 Agar email pehle se mojood ho to ye mana kar dega (overwrite
 nahi karega) — ye hifazat ke liye hai.
 
+## Step 2b — Free plan par Shell nahi hai (bootstrap endpoint)
+
+Render ka free compute plan **Shell nahi deta** (ye Starter
+feature hai). Is liye free plan par Step 2 + Step 3 ki jagah
+aik mehfooz aik-dafa wala endpoint hai:
+
+```
+POST https://rahi-api.onrender.com/api/v1/admin/bootstrap
+Header: x-bootstrap-secret: <ENCRYPTION_KEY>
+Body: { "email": "admin@rahi.test", "password": "<12+ chars>" }
+```
+
+Ye aik hi Postgres transaction me extensions + saari migration
+files chalata hai (fail ho to sab rollback — dobara chalana
+mehfooz hai), aur phir pehla SUPER_ADMIN bana deta hai.
+Tables pehle se bani hon to migration files dobara nahi chalata
+(admin dobara banane ki koshish phir bhi ho sakti hai).
+Secret ke baghair 401 milta hai; secret kabhi log nahi hota.
+Ye endpoint Phase 17 ke "koi endpoint admin nahi banata" wale
+rule ka jaan-boojh kar exception hai — free plan par operator
+Shell mojood hi nahi hai.
+
 ## Step 4 — Test karein
 
 1. `https://rahi-admin.onrender.com` kholein (pehli load me
