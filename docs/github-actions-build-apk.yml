@@ -1,0 +1,70 @@
+# GitHub Actions workflow: build Rahi Android APKs (customer + driver)
+#
+# HOW TO USE (one-time, 2 minutes):
+#   This file lives in docs/ on purpose: pushes from automation cannot
+#   create .github/workflows files without the `workflow` scope, so the
+#   owner uploads it once via the GitHub web UI:
+#     1. GitHub repo -> Add file -> Upload files
+#     2. Upload THIS file to the path: .github/workflows/build-apk.yml
+#     3. Actions tab -> "Build Rahi APKs" -> Run workflow (or push a
+#        change under apps/customer-mobile or apps/driver-mobile)
+#     4. Download the APK artifacts from the finished run.
+#
+# The APKs are release builds signed with Flutter's default debug key:
+# fine for pilot testing on real phones, NOT for Play Store release
+# (that needs a real upload key + signing config).
+#
+# The apps default to the live Render API, so no secrets are needed.
+
+name: Build Rahi APKs
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/customer-mobile/**'
+      - 'apps/driver-mobile/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: stable
+
+      - name: Build customer APK
+        run: |
+          cd apps/customer-mobile
+          flutter pub get
+          flutter analyze
+          flutter create --platforms=android .
+          flutter build apk --release
+
+      - name: Build driver APK
+        run: |
+          cd apps/driver-mobile
+          flutter pub get
+          flutter analyze
+          flutter create --platforms=android .
+          flutter build apk --release
+
+      - name: Upload customer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rahi-customer-apk
+          path: apps/customer-mobile/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload driver APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: rahi-driver-apk
+          path: apps/driver-mobile/build/app/outputs/flutter-apk/app-release.apk
