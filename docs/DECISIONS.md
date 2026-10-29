@@ -40,8 +40,9 @@ so it can change without a rewrite.
 - SMS/OTP vendor: Twilio wired post-Phase-17 (env-selectable
   provider, log fallback in dev; see docs/SMS-DELIVERY.md). Local
   PK gateway remains a possible later addition. OPEN: map provider
-  (dev default: OSM + OSRM, no vendor lock-in), pilot cities (dev default:
-  single-city pilot, Lahore first, until confirmed otherwise), production
+  (dev default: OSM + OSRM, no vendor lock-in), pilot cities (USER
+  DECISION 2026-10-29: launch starts from Islamabad — Islamabad city
+  created live via API the same day; Lahore was only the dev default), production
   hosting (Docker-first, provider-agnostic), terms/privacy drafting owner.
 
 ## Decisions needing YOUR confirmation (they affect business model, legal or infra)

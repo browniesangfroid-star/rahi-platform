@@ -33,7 +33,7 @@ decline → navigate to pickup → PIN → trip → earnings update → rating.
 Key lesson: KYC is a gate, not a form. `drivers cannot accept rides until
 APPROVED`, and every KYC state change needs a reason, an actor and an audit row.
 
-## 3. Fare negotiation / bidding (inDrive-style concept, original implementation)
+## 3. Fare negotiation / bidding (negotiated-fare concept, original implementation)
 
 Negotiation is a two-sided offer market, not an auction:
 
@@ -128,10 +128,10 @@ row with actor, target, before/after summary and reason.
 ## 7. What was deliberately NOT copied
 
 No brand names, logos, colour schemes, screen layouts, copy or API shapes
-from inDrive, Yango, Uber or Careem. The Rahi brand, tokens and screens in
-later phases are original. "inDrive-style" in the brief is treated as a
-business concept (customer-proposed fare + driver counteroffer), implemented
-from scratch.
+from other ride-hailing apps. The Rahi brand, tokens and screens in
+later phases are original. The negotiated-fare idea in the brief is
+treated as a business concept (customer-proposed fare + driver
+counteroffer), implemented from scratch.
 
 ## Open research items for later phases
 
